@@ -9,6 +9,8 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
 
@@ -24,6 +26,7 @@ import javax.xml.validation.Validator;
 
 import org.schemaspy.Config;
 import org.schemaspy.model.InvalidConfigurationException;
+import org.schemaspy.model.xml.MetaModelKeywords;
 import org.schemaspy.model.xml.ModelExtension;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -39,10 +42,15 @@ public class GenericMeta implements ModelExtension {
 
 	private static String SCHEMA_XSD = "schemaspy.meta.xsd";
 
-	// private List<TableMeta> tables = new ArrayList<TableMeta>();
+	private final static String LEFT_LABEL = "leftLabel";
+	private final static String RIGHT_LABEL = "rightLabel";
+	private final static String HEADING = "heading";
+
+	private List<TableMetadata> tables = new ArrayList<TableMetadata>();
 	private String comments;
 	private File metaFile;
 	private InputStream xslStream;
+
 	private final Logger logger = Logger.getLogger(getClass().getName());
 
 	private void validate(Document document) throws SAXException, IOException {
@@ -149,67 +157,78 @@ public class GenericMeta implements ModelExtension {
 
 				for (int i = 0; i < tableNodes.getLength(); ++i) {
 					Node tableNode = tableNodes.item(i);
+	                TableMetadata tableMeta = new TableMetadata(tableNode);
+	                tables.add(tableMeta);
 				}
 			}
 		} else {
 
 			// Load the shell of the tables
 			ArrayList<String> ts = new ArrayList<String>();
-			ts.add("ReportLayoutMatrix_Epic5.1AC01");
-			ts.add("ReportLayoutMatrix_Epic5.1AC02");
-			ts.add("ReportLayoutMatrix_Epic5.1AC03");
 		}
 	}
 
 	public String getValue(String table, String column, String key) {
 
-		if (table == null && column == null && key != null && key.compareTo("comments") == 0)
+		if (table == null && column == null && key != null && key.compareTo(MetaModelKeywords.COMMENTS) == 0)
 			return "Default extension comment for database";
 
-		if (table != null && column == null && key != null && key.compareTo("comments") == 0)
+		if (table != null && column == null && key != null && key.compareTo(MetaModelKeywords.COMMENTS) == 0)
 			return "Default extension comment for a table";
 
-		if (table != null && column != null && key != null && key.compareTo("comments") == 0)
+		if (table != null && column != null && key != null && key.compareTo(MetaModelKeywords.COMMENTS) == 0)
 			return "Default extension comment for a column";
 
 		return null;
 	}
 
-	public Map<String, String> getValues(String table, String column) {
+	public Map<String, String> get(String table, String column) {
+
+		
+		if (table == null && column == null)
+		{
+			
+		}
+		if (table != null && column == null)
+		{
+			
+		}
+
+		if (table != null && column != null)
+		{
+			Map<String, String> map = new HashMap<String, String>();
+			map.put("reviewed", "--");
+			map.put("reviewedBy", "Not Specified");
+			map.put("dataClassification", "Confidential");
+			map.put("masking", "--None");
+			map.put("consumer", "--None");
+			map.put("source", "external");
+			map.put("information", "http://www.google.com.au");
+			return map;
+		}
+
 
 		return null;
 	}
 
-	public String getHeader(String table, String column, String key) {
+	public List<String> getTables() {
 
-		if (table == null && column == null && key != null && key.compareTo("comments") == 0)
-			return "Comment";
-
-		return null;
+		List<String> list = new ArrayList<String>();
+		for (TableMetadata table : tables)
+			list.add(table.getName());
+		return list;
 	}
 
-	public Map<String, String> getHeaders(String table, String column) {
-		return null;
-	}
+	public List<String> getColumns(String tableName) {
 
-	public String getLeftLabel(String table, String column, String key) {
-		if (table == null && column == null && key != null && key.compareTo("comments") == 0)
-			return "Comment";
-
-		return null;
-	}
-
-	public Map<String, String> getLeftLabels(String table, String column) {
-
-		return null;
-	}
-
-	public String getRightLabel(String table, String column, String key) {
-
-		return null;
-	}
-
-	public Map<String, String> getRightLabels(String table, String column) {
+		for (TableMetadata table : tables) {
+			if (tableName.compareToIgnoreCase(table.getName()) == 0) {
+				List<String> list = new ArrayList<String>();
+				for (ColumnMetadata col : table.getColumns())
+					list.add(col.getName());
+				return list;
+			}
+		}
 
 		return null;
 	}
