@@ -17,8 +17,7 @@ public class TableMetadata {
     private final List<ColumnMetadata> columns = new ArrayList<ColumnMetadata>();
     private final String remoteCatalog;
     private final String remoteSchema;
-    private static final Logger logger = Logger.getLogger(TableMetadata.class.getName());
-	
+    	
 
 	TableMetadata(Node tableNode) {
         NamedNodeMap attribs = tableNode.getAttributes();
@@ -41,11 +40,6 @@ public class TableMetadata {
         node = attribs.getNamedItem(MetaModelKeywords.REMOTE_CATALOG);
         remoteCatalog = node == null ? null : node.getNodeValue().trim();
 
-        logger.fine("Found XML table metadata for " + name +
-                    " remoteCatalog: " + remoteCatalog +
-                    " remoteSchema: " + remoteSchema +
-                    " comments: " + comments);
-
         NodeList columnNodes = ((Element)tableNode.getChildNodes()).getElementsByTagName("column");
 
         for (int i = 0; i < columnNodes.getLength(); ++i) {
@@ -62,6 +56,11 @@ public class TableMetadata {
     public List<ColumnMetadata> getColumns() {
         return columns;
     }
+
+
+	public String getComments() {
+		return comments;
+	}
 
 
 }

@@ -4,12 +4,18 @@
         <xs:complexType>
             <xs:sequence>
                 <xs:element ref="comments"/>
+            	<xs:element name="information" type="xs:string" minOccurs="0" maxOccurs="1" />
                 <xs:element ref="tables"/>
             </xs:sequence>
+
+            <xs:attribute name="reviewed" type="xs:dateTime"/>
+            <xs:attribute name="reviewedBy" type="xs:string"/>
+        	<xs:attribute name="doclink" type="xs:anyURI" />
+        	<xs:attribute name="reflink" type="xs:anyURI" />
         </xs:complexType>
     </xs:element>
     <xs:element name="comments" type="xs:string"/>
-    <xs:element name="classification" type="xs:string"/>
+    <xs:element name="dataClassification" type="xs:string"/>
     <xs:element name="tables">
         <xs:complexType>
             <xs:sequence>
@@ -20,8 +26,11 @@
     <xs:element name="table">
         <xs:complexType>
             <xs:sequence>
+            	<xs:element name="dataSource" type="xs:string" minOccurs="0" maxOccurs="1" />
+            	<xs:element name="information" type="xs:string" minOccurs="0" maxOccurs="1" />
                 <xs:element ref="column" minOccurs="0" maxOccurs="unbounded"/>
             </xs:sequence>
+            
             <xs:attribute name="name" type="xs:string" use="required"/>
             <xs:attribute name="comments" type="xs:string"/>
             <xs:attribute name="remoteCatalog" type="xs:string">
@@ -39,7 +48,7 @@
                 </xs:annotation>
             </xs:attribute>
 
-            <xs:attribute name="classification" type="xs:string"/>
+            <xs:attribute name="dataClassification" type="xs:string"/>
             <xs:attribute name="reviewed" type="xs:dateTime"/>
             <xs:attribute name="reviewedBy" type="xs:string"/>
         </xs:complexType>
@@ -47,6 +56,8 @@
     <xs:element name="column">
         <xs:complexType>
         	<xs:sequence>
+            	<xs:element name="dataSource" type="xs:string" minOccurs="0" maxOccurs="1" />
+            	<xs:element name="derivation" type="xs:string" minOccurs="0" maxOccurs="1" />
         		<xs:element ref="foreignKey" minOccurs="0"
         			maxOccurs="unbounded" />
         	</xs:sequence>
@@ -58,14 +69,12 @@
         	<xs:attribute name="nullable" type="xs:boolean"></xs:attribute>
         	<xs:attribute name="comments" type="xs:string" />
 
-        	<xs:attribute name="classification" type="xs:string" />
+        	<xs:attribute name="dataClassification" type="xs:string" />
         	<xs:attribute name="leftLabel" type="xs:string" />
         	<xs:attribute name="rightLabel" type="xs:string" />
         	<xs:attribute name="formatter" type="xs:string" />
         	<xs:attribute name="heading" type="xs:string" />
-        	<xs:attribute name="derivation" type="xs:string" />
         	<xs:attribute name="doclink" type="xs:anyURI" />
-        	<xs:attribute name="dataSource" type="xs:string" />
         	<xs:attribute name="reflink" type="xs:anyURI" />
 
         	<xs:attribute name="primaryKey" type="xs:boolean">
@@ -124,6 +133,7 @@
         		</xs:simpleType>
         	</xs:attribute>
 
+            <xs:attribute name="masking" type="xs:string"/>
             <xs:attribute name="reviewed" type="xs:dateTime"/>
             <xs:attribute name="reviewedBy" type="xs:string"/>
         </xs:complexType>

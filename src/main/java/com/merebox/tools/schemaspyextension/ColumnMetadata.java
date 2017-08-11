@@ -1,6 +1,7 @@
 package com.merebox.tools.schemaspyextension;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.logging.Logger;
 
@@ -26,7 +27,7 @@ public class ColumnMetadata {
     private final boolean isAllExcluded;
     private final boolean isImpliedParentsDisabled;
     private final boolean isImpliedChildrenDisabled;
-    private static final Logger logger = Logger.getLogger(ColumnMetadata.class.getName());
+    
 
     public ColumnMetadata(Node colNode) {
         NamedNodeMap attribs = colNode.getAttributes();
@@ -113,9 +114,7 @@ public class ColumnMetadata {
             isExcluded = false;
         }
 
-        logger.finer("Found XML column metadata for " + name +
-                    " isPrimaryKey: " + isPrimary +
-                    " comments: " + comments);
+
 
     }
 
