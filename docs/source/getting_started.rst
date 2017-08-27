@@ -7,7 +7,7 @@ Pre-requisites
 
 First you need:-
 
-* ensure you have Java 9 installed
+* ensure you have Java 8 installed
 
 * downloaded the SchemaSpy Jar file (not the standard but ?? )
 
@@ -17,7 +17,7 @@ First you need:-
 Schema Extension
 ----------------
 
-After completing the pre-requisite you need to donwload the SchemaSpy extension and place it in the ext-lib folder.
+After completing the pre-requisite you need to download the SchemaSpy extension and place it in the ext-lib folder.
 
 You also need to change schemaspy.properties file
 

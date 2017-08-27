@@ -25,10 +25,16 @@ Indices and tables
 Background
 ----------
 
-The SchemaSpy Extension is extending the metadata published by he excellent SchemaSpy tool http://schemaspy.org/
+The SchemaSpy Extension can extend the metadata published by the excellent SchemaSpy tool http://schemaspy.org/
 
-It allows the metadata to be extended so that the published data :-
+The extension can improve the metadata so that the published data :-
 
 * Provide metadata for CSV files which can be queried by JDBC drivers but have no column size or type information
 
-* Extend the RDBMS metadata for industry standards such as Oracle, DB2, MS SQL Server to lineage data or classify columns for privacy   
+* Extend the RDBMS metadata for industry standards such as Oracle, DB2, MS SQL Server to lineage data or classify columns for privacy
+
+* Provide business meaning behin tables and columns for reporting and analytics
+
+* Provide review tracking for schemas, tables, columns
+
+* Include database schema versioning on documentation
