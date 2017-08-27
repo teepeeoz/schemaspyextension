@@ -22,11 +22,13 @@ Indices and tables
 * :ref:`search`
 
 
-First Header
-------------
+Background
+----------
 
-   some paragraph text
-   additional material
+The SchemaSpy Extension is extending the metadata published by he excellent SchemaSpy tool http://schemaspy.org/
 
-   next para before we move to other file
+It allows the metadata to be extended so that the published data :-
 
+* Provide metadata for CSV files which can be queried by JDBC drivers but have no column size or type information
+
+* Extend the RDBMS metadata for industry standards such as Oracle, DB2, MS SQL Server to lineage data or classify columns for privacy   
