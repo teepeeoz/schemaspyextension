@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.LogManager;
 import java.util.logging.Logger;
 
 import javax.xml.XMLConstants;
@@ -42,11 +43,13 @@ import org.xml.sax.SAXException;
  */
 public class GenericMeta implements ModelExtension {
 
+	private static String VERSION_STRING = "Generic metamodel plugin v.0.0.1";
 	private static String SCHEMA_XSD = "schemaspy.generic.meta.xsd";
+	private static String LOGGING_PROPERTY_FILE = "logging.properties";
 
 	private final static String DEFAULT_SCHEMA = "PUBLIC";
 	private final static String DEFAULT_CATALOG = "CATALOG";
-	
+
 	private final static String RESERVED_CATALOG = "catalog";
 	private final static String RESERVED_SCHEMA = "schema";
 	private final static String RESERVED_TABLE = "table";
@@ -64,24 +67,47 @@ public class GenericMeta implements ModelExtension {
 	private File metaFile;
 	private InputStream xslStream;
 
-	private final Logger logger = Logger.getLogger(getClass().getName());
+	// Due to Java looging class loading issues handle logging manually
+	private Logger logger;
 
 	public GenericMeta() {
-		logger.info("Initialising GenericMeta");
+
+		if (logger == null) {
+			File logProperty = new File(LOGGING_PROPERTY_FILE);
+			if (logProperty.exists()) {
+				try {
+
+					InputStream inputStream = new FileInputStream(logProperty);
+					LogManager.getLogManager().readConfiguration(inputStream);
+					logger = Logger.getLogger(getClass().getName());
+					logger.fine("Loaded logging property file");
+
+				} catch (final IOException ioe) {
+					Logger.getAnonymousLogger().severe("Could not load default logging.properties file");
+					Logger.getAnonymousLogger().severe(ioe.getMessage());
+				}
+			}
+		}
+
+		if (logger == null) {
+			logger = Logger.getLogger(getClass().getName());
+			logger.fine("Used default logging");
+		}
+		logger.fine("Initialising GenericMeta");
 		// No actions required
 	}
 
 	public void loadModelExtension(String xmlMeta, String dbName, String schema) throws InvalidConfigurationException {
 
-		
+		logger.info("Load model extension");
 		if (schema == null || schema.isEmpty())
 			schema = DEFAULT_SCHEMA;
 
 		if (dbName == null || dbName.isEmpty())
 			dbName = schema;
-		
+
 		String catalog = DEFAULT_CATALOG;
-		
+
 		if (xmlMeta != null && xmlMeta.trim().length() > 0) {
 			File meta = new File(xmlMeta);
 			if (meta.isDirectory()) {
@@ -93,14 +119,14 @@ public class GenericMeta implements ModelExtension {
 						// don't force all of the "one of many" schemas to have
 						// metafiles
 						logger.info(
-								"Meta directory \"" + xmlMeta + "\" should contain a file named \"" + filename + '\"');
+								"Meta directory \"" + xmlMeta + "\" should contain a file named \"" + filename + "\"");
 						comments = null;
 						metaFile = null;
 						return;
 					}
 
 					throw new InvalidConfigurationException(
-							"Meta directory \"" + xmlMeta + "\" must contain a file named \"" + filename + '\"');
+							"Meta directory \"" + xmlMeta + "\" must contain a file named \"" + filename + "\"");
 				}
 			} else if (!meta.exists()) {
 				throw new InvalidConfigurationException("Specified meta file \"" + xmlMeta + "\" does not exist");
@@ -113,12 +139,16 @@ public class GenericMeta implements ModelExtension {
 			if (xsd.exists()) {
 				try {
 					xslStream = new FileInputStream(xsd);
+					logger.info("Using XSD file: \"" + xsd.getCanonicalPath() + "\"");
 				} catch (FileNotFoundException fnfe) {
 					throw new InvalidConfigurationException(
 							"Schema XSD file (" + xsd.getAbsolutePath() + ") failed to load");
+				} catch (IOException ie) {
+					logger.warning("Error in using XSD file, though stream load successful");
 				}
 			} else {
 				// Note that this in this JARs resource if no file found
+				logger.info("Using XSD resource file");
 				xslStream = getClass().getResourceAsStream("/" + SCHEMA_XSD);
 			}
 
@@ -136,20 +166,19 @@ public class GenericMeta implements ModelExtension {
 
 				for (int i = 0; i < tableNodes.getLength(); ++i) {
 					Node tableNode = tableNodes.item(i);
-			        NamedNodeMap attribs = tableNode.getAttributes();
-			        String tName = attribs.getNamedItem("name").getNodeValue();
-					mTables.add(catalog+":"+schema+":" +tName);
+					NamedNodeMap attribs = tableNode.getAttributes();
+					String tName = attribs.getNamedItem("name").getNodeValue();
+					mTables.add(catalog + ":" + schema + ":" + tName);
 					loadColumns(catalog, schema, tableNode);
-					
-					//TableMetadata tableMeta = new TableMetadata(tableNode);
-					//tables.add(tableMeta);
 				}
 			}
 		} else {
+			logger.info("Using no Meta file");
 
 			// Load the shell of the tables
 			ArrayList<String> ts = new ArrayList<String>();
 		}
+
 	}
 
 	public String getValue(String shema, String table, String column, String key) throws MetamodelFailure {
@@ -157,18 +186,17 @@ public class GenericMeta implements ModelExtension {
 		// Ensure that key vale is not a special term
 		if (key == null)
 			return null;
-		
-		if ((key.compareToIgnoreCase(RESERVED_CATALOG) == 0) ||
-			(key.compareToIgnoreCase(RESERVED_SCHEMA) == 0) ||
-			(key.compareToIgnoreCase(RESERVED_TABLE) == 0) ||
-			(key.compareToIgnoreCase(RESERVED_COLUMN) == 0)) 
+
+		if ((key.compareToIgnoreCase(RESERVED_CATALOG) == 0) || (key.compareToIgnoreCase(RESERVED_SCHEMA) == 0)
+				|| (key.compareToIgnoreCase(RESERVED_TABLE) == 0) || (key.compareToIgnoreCase(RESERVED_COLUMN) == 0))
 			throw new MetamodelFailure("Attempted use of reserved keyword for key value. Key value was: " + key);
-		
+
 		if (table == null && column == null && key != null && key.compareTo(MetaModelKeywords.COMMENTS) == 0) {
 			return null;
 		}
 
 		if (table != null && column == null && key != null) {
+			logger.fine("Retrieving meta data for columns in table "+ shema + "." + table);
 			if (extensionDocument != null) {
 				NodeList tablesNodes = extensionDocument.getElementsByTagName("tables");
 				if (tablesNodes != null) {
@@ -178,16 +206,15 @@ public class GenericMeta implements ModelExtension {
 						Node tableNode = tableNodes.item(i);
 						TableMetadata tableMeta = new TableMetadata(tableNode);
 						if (tableMeta.getName().compareToIgnoreCase(table) == 0) {
-							// Special hardcoded handling of "Comments" 
+							// Special hardcoded handling of "Comments"
 							if (key.compareTo(MetaModelKeywords.COMMENTS) == 0)
 								return tableMeta.getComments();
-							
+
 							NodeList nodes = ((Element) tableNode).getElementsByTagName(key);
-							if (nodes != null && nodes.getLength() > 0)
-							{
+							if (nodes != null && nodes.getLength() > 0) {
 								return nodes.item(0).getNodeValue();
 							}
-							
+
 							break;
 						}
 					}
@@ -213,13 +240,12 @@ public class GenericMeta implements ModelExtension {
 								Node colNode = columnNodes.item(j);
 								ColumnMetadata columnMeta = new ColumnMetadata(colNode);
 								if (columnMeta.getName().compareToIgnoreCase(column) == 0) {
-									// Special hardcoded handling of "Comments" 
+									// Special hardcoded handling of "Comments"
 									if (key.compareTo(MetaModelKeywords.COMMENTS) == 0)
 										return columnMeta.getComments();
-									
+
 									NodeList nodes = ((Element) colNode).getElementsByTagName(key);
-									if (nodes != null && nodes.getLength() > 0)
-									{
+									if (nodes != null && nodes.getLength() > 0) {
 										return nodes.item(0).getNodeValue();
 									}
 
@@ -240,7 +266,7 @@ public class GenericMeta implements ModelExtension {
 
 		if (table == null && column == null) {
 			Map<String, String> map = new HashMap<String, String>();
-			
+
 			return map;
 		}
 
@@ -255,7 +281,8 @@ public class GenericMeta implements ModelExtension {
 						Node tableNode = tableNodes.item(i);
 						TableMetadata tableMeta = new TableMetadata(tableNode);
 						if (tableMeta.getName().compareToIgnoreCase(table) == 0) {
-							// Build map of attributes and elements associated with column									
+							// Build map of attributes and elements associated
+							// with column
 							NodeList nodes = tableNode.getChildNodes();
 							for (int q = 0; q < nodes.getLength(); ++q) {
 								Node item = nodes.item(q);
@@ -300,7 +327,8 @@ public class GenericMeta implements ModelExtension {
 								Node colNode = columnNodes.item(j);
 								ColumnMetadata columnMeta = new ColumnMetadata(colNode);
 								if (columnMeta.getName().compareToIgnoreCase(column) == 0) {
-									// Build map of attributes and elements associated with column									
+									// Build map of attributes and elements
+									// associated with column
 									NodeList nodes = colNode.getChildNodes();
 									for (int q = 0; q < nodes.getLength(); ++q) {
 										Node item = nodes.item(q);
@@ -339,10 +367,9 @@ public class GenericMeta implements ModelExtension {
 
 		String prefix = DEFAULT_CATALOG + ":" + schema;
 		List<String> list = new ArrayList<String>();
-		for (String item: mTables)
-		{
+		for (String item : mTables) {
 			if (item.startsWith(prefix))
-				list.add(item.replace(prefix+":", ""));
+				list.add(item.replace(prefix + ":", ""));
 		}
 
 		return list;
@@ -351,19 +378,18 @@ public class GenericMeta implements ModelExtension {
 	public List<String> getColumns(String schema, String tableName) {
 
 		String prefix = DEFAULT_CATALOG + ":" + schema + ":" + tableName;
+		logger.fine("Get columns in table "+ schema + "." + tableName);
 		List<String> list = new ArrayList<String>();
-		for (String item: mColumns)
-		{
+		for (String item : mColumns) {
 			if (item.startsWith(prefix))
-				list.add(item.replace(prefix+":", ""));
+				list.add(item.replace(prefix + ":", ""));
 		}
 		return list;
 	}
 
 	public String version() {
-		return "Generic metamodel plugin v.0.0.1";
+		return VERSION_STRING;
 	}
-
 
 	private Document parse(File file) throws InvalidConfigurationException {
 		DocumentBuilder docBuilder;
@@ -380,8 +406,8 @@ public class GenericMeta implements ModelExtension {
 		}
 
 		try {
-			logger.info("Parsing Metamodel file '" + file + "'");
 			doc = docBuilder.parse(file);
+			logger.info("Parsed Metamodel file '" + file + "'");
 		} catch (SAXException exc) {
 			throw new InvalidConfigurationException("Failed to parse " + file, exc);
 		} catch (IOException exc) {
@@ -398,7 +424,6 @@ public class GenericMeta implements ModelExtension {
 		return doc;
 	}
 
-
 	private void validate(Document document) throws SAXException, IOException {
 		// create a SchemaFactory capable of understanding WXS schemas
 		SchemaFactory factory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
@@ -413,19 +438,22 @@ public class GenericMeta implements ModelExtension {
 		// validate the DOM tree
 		validator.validate(new DOMSource(document));
 	}
-	
-	private void loadColumns(String catalog, String schema, Node tableNode)
-	{
-        NamedNodeMap attribs = tableNode.getAttributes();
-        String tName = attribs.getNamedItem("name").getNodeValue();
-        // Add the column names to the list so we don't need to parse the doc when listing
-        NodeList columnNodes = ((Element)tableNode.getChildNodes()).getElementsByTagName("column");
-        for (int i = 0; i < columnNodes.getLength(); ++i) {
-            Node colNode = columnNodes.item(i);
-	        attribs = colNode.getAttributes();
-	        String cName = attribs.getNamedItem("name").getNodeValue();
-			mColumns.add(catalog+":"+schema+":" +tName + ":" + cName);
-        }
+
+	private void loadColumns(String catalog, String schema, Node tableNode) {
+
+		NamedNodeMap attribs = tableNode.getAttributes();
+		String tName = attribs.getNamedItem("name").getNodeValue();
+
+		logger.fine("Loading columns for table "+ tName);
+		// Add the column names to the list so we don't need to parse the doc
+		// when listing
+		NodeList columnNodes = ((Element) tableNode.getChildNodes()).getElementsByTagName("column");
+		for (int i = 0; i < columnNodes.getLength(); ++i) {
+			Node colNode = columnNodes.item(i);
+			attribs = colNode.getAttributes();
+			String cName = attribs.getNamedItem("name").getNodeValue();
+			mColumns.add(catalog + ":" + schema + ":" + tName + ":" + cName);
+		}
 
 	}
 
